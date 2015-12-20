@@ -69,8 +69,9 @@ given(<>) {
         $arity = $arities{$code};
         @needed = ();
         for($counter = $arity;$counter > 0 and scalar(@arguments) > 0;$counter--) {
-          push(@needed,shift(@arguments)); # pop the arguments we need
+          push(@needed,pop(@arguments)); # pop the arguments we need
         }
+        @needed = reverse(@needed);
         if(scalar(@needed) + 1 == $arity) {
           push(@needed,deref($variables{"_"})); # add default var if we're off by one
         } elsif(scalar(@needed) < $arity) {
