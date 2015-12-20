@@ -108,7 +108,7 @@ sub stringParse {
   my @string = ();
   my $mode = pop;
   if($mode == 1) {
-    while(ord(@tokens[$pointer]) >= 33 and ord(@tokens[$pointer]) <= 126 and @tokens[$pointer] ne '"' and !exists($variables{@tokens[$pointer]}) and $pointer < scalar(@tokens)) {
+    while(ord(@tokens[$pointer]) >= 32 and ord(@tokens[$pointer]) <= 126 and @tokens[$pointer] ne '"' and !exists($variables{@tokens[$pointer]}) and $pointer < scalar(@tokens)) {
       push(@string, @tokens[$pointer]);
       $pointer++;
     }
@@ -156,10 +156,10 @@ sub factorial {
 # lazy trial division up to sqrt(n)
 # replace with something that doesn't suck later
 sub isPrime {
-  $num = shift(@_);
-  $s = int(sqrt($num));
+  my $num = shift(@_);
+  my $s = int(sqrt($num));
   if($num <= 2) { return ($num == 2 ? 1 : 0); } 
-  for($c = 2; $c <= $s; $c++) {
+  for(my $c = 2; $c <= $s; $c++) {
     if(($num % $c) == 0) { return 0; }
   }
   return 1;
