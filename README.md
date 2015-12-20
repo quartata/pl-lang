@@ -4,4 +4,4 @@ Half stack-based, half procedural, and almost, but not quite, entirely unlike Pe
 
 ---
 
-`perl pl.pl FILE <<< INPUT`
+`echo -n INPUT | perl pl.pl FILE`
