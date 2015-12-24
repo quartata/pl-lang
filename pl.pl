@@ -26,6 +26,7 @@ use feature qw(say switch);
   157=>\(sub { $pointer++; skip(); return; }), # else
   158=>\(sub { return soundex(pop); }), # soundex
   162=>\(sub { return chr(pop); }), # chr
+  164=>\(sub { return "\n"; }), # newline
   165=>\(sub { return product(pop); }), # product
   166=>\(sub { $x = shift(@_); $y = shift(@_); return ($y =~ /$x/); }), # match
   167=>\(sub { $x = shift(@_); $y = shift(@_); $z = shift(@_); $variables{"_"} = \scalar($z =~ s/$x/$y/g); return $z; }), # substitute
@@ -59,6 +60,7 @@ use feature qw(say switch);
   157=>0,
   158=>1,
   162=>1,
+  164=>0,
   165=>1,
   166=>2,
   167=>3,
@@ -171,14 +173,12 @@ sub stringParse {
 sub deref {
   my $ref = pop;
   my $type = ref $ref;
-  if($type == "SCALAR") {
-    return $$ref;
-  } elsif($type == "ARRAY") {
+  if($type eq "ARRAY") {
     return @$ref;
-  } elsif($type == "HASH") {
+  } elsif($type eq "HASH") {
     return %$ref;
   } else {
-    return &$ref;
+    return $$ref;
   }
 }
 
