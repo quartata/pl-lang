@@ -1,7 +1,9 @@
 #!/usr/bin/perl
 # pl
 
-use List::Util reduce;
+use List::Util qw(all any first max min product reduce sum);
+use Scalar::Util qw(dualvar looks_like_number);
+use Text::Soundex;
 use feature qw(say switch);
 
 %variables = ();
@@ -9,6 +11,7 @@ use feature qw(say switch);
   7=>\(sub { return shift(@_)*shift(@_) }), # multiplication
   15=>\(sub { return 2*pop; }),             # double
   19=>\(sub { return factorial(pop); }),    # factorial
+  29=>\(sub { return dualvar(shift(@_),shift(@_)); }), # dualvar
   30=>\(sub { $variables{$lastusedvar} = \(deref($variables{$lastusedvar})+1); return; }), # increment last var
   31=>\(sub { $variables{$lastusedvar} = \(deref($variables{$lastusedvar})-1); return; }), # decrement last var
   61=>\(sub {                               # assignment
@@ -16,10 +19,25 @@ use feature qw(say switch);
       @variables{@tokens[$pointer]} = \pop;
       return;
   }),
+  127=>\(sub {}), # no-op
   135=>\(sub { $n = shift(@_); $k = shift(@_); return (factorial($n)/(factorial($k)*factorial($n-$k))); }), # combinations
+  137=>\(sub { return pop%2; }), # parity
+  149=>\(sub { return ord(pop); }), # ord
+  157=>\(sub { $pointer++; skip(); return; }), # else
+  158=>\(sub { return soundex(pop); }), # soundex
+  162=>\(sub { return chr(pop); }), # chr
+  165=>\(sub { return product(pop); }), # product
+  166=>\(sub { $x = shift(@_); $y = shift(@_); return ($y =~ /$x/); }), # match
+  167=>\(sub { $x = shift(@_); $y = shift(@_); $z = shift(@_); $variables{"_"} = \scalar($z =~ s/$x/$y/g); return $z; }), # substitute
+  168=>\(sub { if(!pop) { skip(); } return; }), # if
   171=>\(sub { return 0.5*pop; }), # half
+  176=>\(sub { return unpack(shift(@_), shift(@_)); }), # unpack
+  177=>\(sub { return pack(shift(@_), shift(@_)); }), # pack
   196=>\(sub { return shift(@_)-shift(@_); }), # subtraction
   197=>\(sub { return shift(@_)+shift(@_); }), # addition
+  208=>\(sub { foreach(pop) { push(@arguments,$_);  } return; }), # flatten
+  228=>\(sub { return sum(pop); }), # sum
+  238=>\(sub { return looks_like_number(pop); }), # quack
   240=>\(sub { return isPrime(pop); }),        # primality
   244=>\(sub { $x = pop(@arguments); $y = pop(@arguments); push(@arguments,$x); push(@arguments,$y); return; }), # swap
   245=>\(sub { @arguments = reverse(@arguments); }), # reverse
@@ -30,13 +48,29 @@ use feature qw(say switch);
   7=>2,
   15=>1,
   19=>1,
+  29=>2,
   30=>0,
   31=>0,
   61=>1,
+  127=>0,
   135=>2,
+  137=>1,
+  149=>1,
+  157=>0,
+  158=>1,
+  162=>1,
+  165=>1,
+  166=>2,
+  167=>3,
+  168=>1,
   171=>1,
+  176=>2,
+  177=>2,
   196=>2,
   197=>2,
+  208=>1,
+  228=>1,
+  238=>1,
   240=>1,
   244=>0,
   245=>0,
@@ -163,4 +197,10 @@ sub isPrime {
     if(($num % $c) == 0) { return 0; }
   }
   return 1;
+}
+
+sub skip {
+  while(ord(@tokens[$pointer]) != 157 and ord(@tokens[$pointer]) != 127 and $pointer < scalar(@tokens)) {
+    $pointer++;
+  }
 }
