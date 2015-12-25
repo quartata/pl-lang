@@ -1,7 +1,8 @@
 #!/usr/bin/perl
 # pl
 
-use List::Util qw(all any first max min product reduce sum);
+use List::Util qw(first max min reduce sum);
+use List::MoreUtils qw(any all);
 use Scalar::Util qw(dualvar looks_like_number);
 use Text::Soundex;
 use feature qw(say switch);
@@ -203,4 +204,8 @@ sub skip {
   while(ord(@tokens[$pointer]) != 157 and ord(@tokens[$pointer]) != 127 and $pointer < scalar(@tokens)) {
     $pointer++;
   }
+}
+
+sub product {
+  return reduce(sub { $a * $b }, @_);
 }
