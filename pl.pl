@@ -9,42 +9,42 @@ use feature qw(say switch);
 
 %variables = ();
 %commands = (
-  7=>\(sub { return shift(@_)*shift(@_) }), # multiplication
-  15=>\(sub { return 2*pop; }),             # double
-  19=>\(sub { return factorial(pop); }),    # factorial
-  29=>\(sub { return dualvar(shift(@_),shift(@_)); }), # dualvar
-  30=>\(sub { $variables{$lastusedvar} = \(deref($variables{$lastusedvar})+1); return; }), # increment last var
-  31=>\(sub { $variables{$lastusedvar} = \(deref($variables{$lastusedvar})-1); return; }), # decrement last var
-  61=>\(sub {                               # assignment
-      $pointer++;
-      @variables{@tokens[$pointer]} = \pop;
-      return;
+  7=>(sub { return shift(@_)*shift(@_); }), # multiplication
+  15=>(sub { return 2*pop; }),             # double
+  19=>(sub { return factorial(pop); }),    # factorial
+  29=>(sub { return dualvar(shift(@_),shift(@_)); }), # dualvar
+  30=>(sub { $variables{$lastusedvar} = \(deref($variables{$lastusedvar})+1); return; }), # increment last var
+  31=>(sub { $variables{$lastusedvar} = \(deref($variables{$lastusedvar})-1); return; }), # decrement last var
+  61=>(sub {                               # assignment
+     $pointer++;
+     $variables{$tokens[$pointer]} = \pop;
+     return;
   }),
-  127=>\(sub {}), # no-op
-  135=>\(sub { $n = shift(@_); $k = shift(@_); return (factorial($n)/(factorial($k)*factorial($n-$k))); }), # combinations
-  137=>\(sub { return pop%2; }), # parity
-  149=>\(sub { return ord(pop); }), # ord
-  157=>\(sub { $pointer++; skip(); return; }), # else
-  158=>\(sub { return soundex(pop); }), # soundex
-  162=>\(sub { return chr(pop); }), # chr
-  164=>\(sub { return "\n"; }), # newline
-  165=>\(sub { return product(pop); }), # product
-  166=>\(sub { $x = shift(@_); $y = shift(@_); return ($y =~ /$x/); }), # match
-  167=>\(sub { $x = shift(@_); $y = shift(@_); $z = shift(@_); $variables{"_"} = \scalar($z =~ s/$x/$y/g); return $z; }), # substitute
-  168=>\(sub { if(!pop) { skip(); } return; }), # if
-  171=>\(sub { return 0.5*pop; }), # half
-  176=>\(sub { return unpack(shift(@_), shift(@_)); }), # unpack
-  177=>\(sub { return pack(shift(@_), shift(@_)); }), # pack
-  196=>\(sub { return shift(@_)-shift(@_); }), # subtraction
-  197=>\(sub { return shift(@_)+shift(@_); }), # addition
-  208=>\(sub { foreach(pop) { push(@arguments,$_);  } return; }), # flatten
-  228=>\(sub { return sum(pop); }), # sum
-  238=>\(sub { return looks_like_number(pop); }), # quack
-  240=>\(sub { return isPrime(pop); }),        # primality
-  244=>\(sub { $x = pop(@arguments); $y = pop(@arguments); push(@arguments,$x); push(@arguments,$y); return; }), # swap
-  245=>\(sub { @arguments = reverse(@arguments); }), # reverse
-  246=>\(sub { return shift(@_)/shift(@_); }), # division
-  252=>\(sub { return shift(@_)**shift(@_); }) # exponent
+  127=>(sub {}), # no-op
+  135=>(sub { $n = shift(@_); $k = shift(@_); return (factorial($n)/(factorial($k)*factorial($n-$k))); }), # combinations
+  137=>(sub { return pop%2; }), # parity
+  149=>(sub { return ord(pop); }), # ord
+  157=>(sub { $pointer++; skip(); return; }), # else
+  158=>(sub { $pointer = 0; }), # recurse
+  162=>(sub { return chr(pop); }), # chr
+  164=>(sub { return "\n"; }), # newline
+  165=>(sub { return product(@_); }), # product
+  166=>(sub { $x = shift(@_); $y = shift(@_); $array = 1; return \($y =~ /$x/); }), # match
+  167=>(sub { $x = shift(@_); $y = shift(@_); $z = shift(@_); $variables{"_"} = \scalar($z =~ s/$x/$y/g); return $z; }), # substitute
+  168=>(sub { if(!pop) { skip(); } return; }), # if
+  171=>(sub { return 0.5*pop; }), # half
+  176=>(sub { $array = 1; return \unpack(shift(@_), shift(@_)); }), # unpack
+  177=>(sub { return pack(shift(@_), shift(@_)); }), # pack
+  196=>(sub { return shift(@_)-shift(@_); }), # subtraction
+  197=>(sub { return shift(@_)+shift(@_); }), # addition
+  208=>(sub { foreach(@_) { push(@arguments,$_);  } return; }), # flatten
+  228=>(sub { return sum(@_); }), # sum
+  238=>(sub { return looks_like_number(pop); }), # quack
+  240=>(sub { return isPrime(pop); }),        # primality
+  244=>(sub { $x = pop(@arguments); $y = pop(@arguments); push(@arguments,$x); push(@arguments,$y); return; }), # swap
+  245=>(sub { @arguments = reverse(@arguments); }), # reverse
+  246=>(sub { return shift(@_)/shift(@_); }), # division
+  252=>(sub { return shift(@_)**shift(@_); }) # exponent
 );
 %arities = (
   7=>2,
@@ -59,7 +59,7 @@ use feature qw(say switch);
   137=>1,
   149=>1,
   157=>0,
-  158=>1,
+  158=>0,
   162=>1,
   164=>0,
   165=>1,
@@ -72,6 +72,7 @@ use feature qw(say switch);
   196=>2,
   197=>2,
   208=>1,
+  223=>0,
   228=>1,
   238=>1,
   240=>1,
@@ -80,16 +81,18 @@ use feature qw(say switch);
   246=>2,
   252=>2
 );
+
 @tokens = ();
 @arguments = ();
 $pointer = 0;
 $lastusedvar = "_";
+$array = 0;
 
 given(<>) {
   @tokens = split("",$_);
   $variables{"_"} = \<STDIN>; # i can't believe this works
   for(;$pointer < scalar(@tokens);$pointer++) {
-    $token = @tokens[$pointer];
+    $token = $tokens[$pointer];
     $code = ord($token);
     if($code >= 48 and $code <= 57) { # beginning of a numeral
       push(@arguments,stringParse(3));
@@ -114,9 +117,12 @@ given(<>) {
         } elsif(scalar(@needed) < $arity) {
           continue; # give up if we don't have enough
         }
-        $result = &{deref($commands{$code})}(@needed);
-        if(defined($result)) { 
-          push(@arguments,$result); # place result on stack
+        $result = &{$commands{$code}}(@needed);
+        if($array) {
+          $array = 0;
+          push(@arguments, @$result); # place result on stack
+        } else {
+          push(@arguments, $result);
         }
       } else {
         if($code == 34) { # regular string
@@ -145,21 +151,21 @@ sub stringParse {
   my @string = ();
   my $mode = pop;
   if($mode == 1) {
-    while(ord(@tokens[$pointer]) >= 32 and ord(@tokens[$pointer]) <= 126 and @tokens[$pointer] ne '"' and !exists($variables{@tokens[$pointer]}) and $pointer < scalar(@tokens)) {
-      push(@string, @tokens[$pointer]);
+    while(ord($tokens[$pointer]) >= 32 and ord($tokens[$pointer]) <= 126 and $tokens[$pointer] ne '"' and !exists($variables{$tokens[$pointer]}) and $pointer < scalar(@tokens)) {
+      push(@string, $tokens[$pointer]);
       $pointer++;
     }
-    if(@tokens[$pointer] ne '"') { $pointer--; }
+    if($tokens[$pointer] ne '"') { $pointer--; }
   } elsif($mode == 0) {
-    while(@tokens[$pointer] ne '"' and $pointer < scalar(@tokens)) {
-      push(@string, @tokens[$pointer]);
+    while($tokens[$pointer] ne '"' and $pointer < scalar(@tokens)) {
+      push(@string, $tokens[$pointer]);
       $pointer++; 
     }
   } elsif($mode == 2) {
-    push(@string, @tokens[$pointer]);
+    push(@string, $tokens[$pointer]);
   } elsif($mode == 3) {
-    while(ord(@tokens[$pointer]) >= 48 and ord(@tokens[$pointer]) <= 57) {
-      push(@string, @tokens[$pointer]);
+    while(ord($tokens[$pointer]) >= 48 and ord($tokens[$pointer]) <= 57) {
+      push(@string, $tokens[$pointer]);
       $pointer++;
     }
     $pointer--;
@@ -175,16 +181,16 @@ sub deref {
   my $ref = pop;
   my $type = ref $ref;
   if($type eq "ARRAY") {
-    return @$ref;
+    return @{$ref};
   } elsif($type eq "HASH") {
-    return %$ref;
+    return %{$ref};
   } else {
-    return $$ref;
+    return ${$ref};
   }
 }
 
 sub factorial {
-  if(@_[0] == 0) { return 1; }
+  if($_[0] == 0) { return 1; }
   return reduce(sub {$a * $b}, 1..pop);
 }
 
@@ -201,7 +207,7 @@ sub isPrime {
 }
 
 sub skip {
-  while(ord(@tokens[$pointer]) != 157 and ord(@tokens[$pointer]) != 127 and $pointer < scalar(@tokens)) {
+  while(ord($tokens[$pointer]) != 157 and ord($tokens[$pointer]) != 127 and $pointer < scalar(@tokens)) {
     $pointer++;
   }
 }
