@@ -118,11 +118,13 @@ given(<>) {
           continue; # give up if we don't have enough
         }
         $result = &{$commands{$code}}(@needed);
-        if($array) {
-          $array = 0;
-          push(@arguments, @$result); # place result on stack
-        } else {
-          push(@arguments, $result);
+        if(defined($result)) {
+          if($array) {
+            $array = 0;
+            push(@arguments, @$result); # place result on stack
+          } else {
+            push(@arguments, $result);
+          }
         }
       } else {
         if($code == 34) { # regular string
