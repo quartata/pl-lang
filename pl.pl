@@ -25,7 +25,7 @@ use feature qw(say switch);
   137=>(sub { return pop%2; }), # parity
   149=>(sub { return ord(pop); }), # ord
   157=>(sub { $pointer++; skip(); return; }), # else
-  158=>(sub { $pointer = 0; }), # recurse
+  158=>(sub { $pointer = -1; return; }), # recurse
   162=>(sub { return chr(pop); }), # chr
   164=>(sub { return "\n"; }), # newline
   165=>(sub { return product(@_); }), # product
@@ -44,7 +44,8 @@ use feature qw(say switch);
   244=>(sub { $x = pop(@arguments); $y = pop(@arguments); push(@arguments,$x); push(@arguments,$y); return; }), # swap
   245=>(sub { @arguments = reverse(@arguments); }), # reverse
   246=>(sub { return shift(@_)/shift(@_); }), # division
-  252=>(sub { return shift(@_)**shift(@_); }) # exponent
+  252=>(sub { return shift(@_)**shift(@_); }), # exponent
+  254=>(sub { $array = 1; return [0,0]; }) # test
 );
 %arities = (
   7=>2,
