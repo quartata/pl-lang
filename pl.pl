@@ -22,7 +22,7 @@ use feature qw(say switch);
   }),
   127=>(sub {}), # no-op
   135=>(sub { $n = shift(@_); $k = shift(@_); return (factorial($n)/(factorial($k)*factorial($n-$k))); }), # combinations
-  137=>(sub { return pop%2; }), # parity
+  137=>(sub { return pop(@_) % 2; }), # parity
   149=>(sub { return ord(pop); }), # ord
   157=>(sub { $pointer++; skip(); return; }), # else
   158=>(sub { $pointer = -1; return; }), # recurse
@@ -194,7 +194,7 @@ sub deref {
 
 sub factorial {
   if($_[0] == 0) { return 1; }
-  return reduce(sub {$a * $b}, 1..pop);
+  return reduce { $a * $b } 1..pop(@_);
 }
 
 # lazy trial division up to sqrt(n)
@@ -216,5 +216,5 @@ sub skip {
 }
 
 sub product {
-  return reduce(sub { $a * $b }, @_);
+  return reduce { $a * $b } @_;
 }
